@@ -134,6 +134,16 @@ class CurlHelper
     }
 
     /**
+     * @param array $data
+     * @return string
+     * @since 1.0.2
+     */
+    public static function getRequestJson($data)
+    {
+        return \json_encode($data, \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES);
+    }
+
+    /**
      * Set headers to curl
      * @return $this
      */
@@ -211,7 +221,7 @@ class CurlHelper
         $this->initCurl($method);
         if($data) {
             if ($requestType == 'json') {
-                $data = \json_encode($data, \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES);
+                $data = static::getRequestJson($data);
             } else {
                 $data = \http_build_query($data);
             }
