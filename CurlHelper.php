@@ -5,7 +5,7 @@ namespace darkfriend\helpers;
 /**
  * CurlHelper - php5 curl helper package
  * @package darkfriend\helpers
- * @version 1.0.2
+ * @version 1.0.3
  * @author darkfriend <hi@darkfriend.ru>
  */
 class CurlHelper
@@ -27,6 +27,8 @@ class CurlHelper
     protected $port;
     /** @var array */
     protected $curlProperties;
+    /** @var int */
+    protected $jsonEncodeOptions = \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES;
 
     /** @var int */
     public $lastCode = 0;
@@ -49,7 +51,7 @@ class CurlHelper
      * @return self
      * @throws \Exception
      */
-    public static function getInstance($newSession = false, $options = [])
+    public static function getInstance($newSession = false, $options = array())
     {
         if (!\function_exists('curl_init')) {
             throw new \Exception('Curl is not found!');
@@ -64,16 +66,26 @@ class CurlHelper
      * CurlHelper constructor.
      * @param array $options
      */
-    protected function __construct($options = [])
+    protected function __construct($options = array())
     {
-        if ($options) {
-            foreach ($options as $key => $option) {
-                if (\substr($key, 0, 1) == '_') continue;
-                if (isset($this->{$key})) {
-                    $this->{$key} = $option;
-                }
+        $this->setOptions($options);
+    }
+
+    /**
+     * Set options for
+     * @param array $options
+     * @return $this
+     */
+    public function setOptions($options = array())
+    {
+        if(!$options) return $this;
+        foreach ($options as $key => $option) {
+            if (\substr($key, 0, 1) == '_') continue;
+            if (isset($this->{$key})) {
+                $this->{$key} = $option;
             }
         }
+        return $this;
     }
 
     /**
@@ -135,12 +147,13 @@ class CurlHelper
 
     /**
      * @param array $data
+     * @param int $options
      * @return string
      * @since 1.0.2
      */
-    public static function getRequestJson($data)
+    public static function getRequestJson($data, $options = 0)
     {
-        return \json_encode($data, \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES);
+        return \json_encode($data, $options);
     }
 
     /**
@@ -221,7 +234,7 @@ class CurlHelper
         $this->initCurl($method);
         if($data) {
             if ($requestType == 'json') {
-                $data = static::getRequestJson($data);
+                $data = static::getRequestJson($data, $this->jsonEncodeOptions);
             } else {
                 $data = \http_build_query($data);
             }
