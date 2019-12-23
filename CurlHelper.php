@@ -5,7 +5,7 @@ namespace darkfriend\helpers;
 /**
  * CurlHelper - php5 curl helper package
  * @package darkfriend\helpers
- * @version 1.0.0
+ * @version 1.0.2
  * @author darkfriend <hi@darkfriend.ru>
  */
 class CurlHelper
@@ -34,6 +34,10 @@ class CurlHelper
     public $lastHeaders = '';
     /** @var string */
     public $lastError;
+    /** @var string */
+    public $requestHeaders = '';
+    /** @var array */
+    public $requestInfo;
 
     /** @var string */
     public $acceptLanguage = 'ru-RU';
@@ -180,6 +184,7 @@ class CurlHelper
                     break;
             }
             \curl_setopt($this->_ch, \CURLOPT_HEADER, 1);
+            \curl_setopt($this->_ch, \CURLINFO_HEADER_OUT, 1);
             \curl_setopt($this->_ch, \CURLOPT_SSL_VERIFYPEER, 0);
             \curl_setopt($this->_ch, \CURLOPT_TIMEOUT, $this->timeout);
             \curl_setopt($this->_ch, \CURLOPT_CONNECTTIMEOUT, $this->timeout);
@@ -230,7 +235,7 @@ class CurlHelper
             $this->debug(array(
                 'debugEvent' => 'before-request',
                 'url' => $url,
-                'requestHeaders' => $this->headers,
+                'requestHeaders' => $this->requestHeaders,
                 'requestData' => $data,
                 'requestType' => $requestType,
                 'responseType' => $responseType,
@@ -238,10 +243,13 @@ class CurlHelper
         }
 
         $response = \curl_exec($this->_ch);
+        $this->requestInfo = curl_getinfo($this->_ch);
 
         $header_size = \curl_getinfo($this->_ch, \CURLINFO_HEADER_SIZE);
         $this->lastHeaders = \substr($response, 0, $header_size);
+
         $this->lastCode = (int) \curl_getinfo($this->_ch, \CURLINFO_HTTP_CODE);
+        $this->requestHeaders = curl_getinfo($this->_ch, \CURLINFO_HEADER_OUT);
 
         \curl_close($this->_ch);
 
@@ -251,7 +259,7 @@ class CurlHelper
             $this->debug(array(
                 'debugEvent' => 'after-request',
                 'url' => $url,
-                'requestHeaders' => $this->headers,
+                'requestHeaders' => $this->requestHeaders,
                 'requestData' => $data,
                 'code' => $this->lastCode,
                 'responseHeaders' => $this->lastHeaders,
