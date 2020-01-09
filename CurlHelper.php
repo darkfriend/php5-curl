@@ -5,7 +5,7 @@ namespace darkfriend\helpers;
 /**
  * CurlHelper - php5 curl helper package
  * @package darkfriend\helpers
- * @version 1.0.3
+ * @version 1.0.4
  * @author darkfriend <hi@darkfriend.ru>
  */
 class CurlHelper
@@ -86,6 +86,19 @@ class CurlHelper
             }
         }
         return $this;
+    }
+
+    /**
+     * Add http headers
+     * @param array $headers key=>$value
+     * @return $this
+     * @example [[$headers]] ['Accept-Language'=>'en-US']
+     * @deprecated
+     * @uses setHeaders()
+     */
+    public function addHeaders(array $headers)
+    {
+        return $this->setHeaders($headers);
     }
 
     /**
@@ -304,6 +317,26 @@ class CurlHelper
         }
 
         return $body;
+    }
+
+    /**
+     * Check cookie file
+     * @param string $cookieFile
+     * @return bool
+     */
+    public function checkCookie($cookieFile='cookies.txt')
+    {
+        $result = false;
+        if (file_exists($cookieFile)) {
+            $result = true;
+        } else {
+            $r = @fopen($cookieFile, 'w');
+            if($r) {
+                $result = true;
+                fclose($r);
+            }
+        }
+        return $result;
     }
 
     /**
