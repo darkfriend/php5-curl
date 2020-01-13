@@ -170,6 +170,18 @@ class CurlHelper
     }
 
     /**
+     * Array to XML encode
+     * @param array $data
+     * @return string
+     * @throws XmlException
+     * @since 1.0.5
+     */
+    public static function getRequestXml($data)
+    {
+        return Xml::encode($data);
+    }
+
+    /**
      * Set headers to curl
      * @return $this
      */
@@ -246,10 +258,15 @@ class CurlHelper
         $this->clear();
         $this->initCurl($method);
         if($data) {
-            if ($requestType == 'json') {
-                $data = static::getRequestJson($data, $this->jsonEncodeOptions);
-            } else {
-                $data = \http_build_query($data);
+            switch ($requestType) {
+                case 'json':
+                    $data = static::getRequestJson($data, $this->jsonEncodeOptions);
+                    break;
+                case 'xml':
+                    $data = static::getRequestXml($data);
+                    break;
+                default:
+                    $data = \http_build_query($data);
             }
             if($method == 'get') {
                 $url .= '?' . $data;
@@ -259,10 +276,14 @@ class CurlHelper
         }
         \curl_setopt($this->_ch, \CURLOPT_URL, $url);
 
-        if ($requestType == 'json') {
-            $this->headers['Content-Type'] = 'application/json; charset=utf-8';
-        } elseif (!empty($requestType)) {
-            $this->headers['Content-Type'] = "$requestType; charset=utf-8";
+        switch ($requestType) {
+            case 'json':
+                $this->headers['Content-Type'] = 'application/json; charset=utf-8';
+                break;
+            case 'xml':
+                $this->headers['Content-Type'] = 'text/xml';
+                break;
+            default: $this->headers['Content-Type'] = "$requestType; charset=utf-8";
         }
 
         $this->initHeaders();
@@ -279,13 +300,13 @@ class CurlHelper
         }
 
         $response = \curl_exec($this->_ch);
-        $this->requestInfo = curl_getinfo($this->_ch);
+        $this->requestInfo = \curl_getinfo($this->_ch);
 
         $header_size = \curl_getinfo($this->_ch, \CURLINFO_HEADER_SIZE);
         $this->lastHeaders = \substr($response, 0, $header_size);
 
         $this->lastCode = (int) \curl_getinfo($this->_ch, \CURLINFO_HTTP_CODE);
-        $this->requestHeaders = curl_getinfo($this->_ch, \CURLINFO_HEADER_OUT);
+        $this->requestHeaders = \curl_getinfo($this->_ch, \CURLINFO_HEADER_OUT);
 
         \curl_close($this->_ch);
 
@@ -305,8 +326,16 @@ class CurlHelper
             ));
         }
 
-        if ($responseType == 'json' && $body) {
-            $body = \json_decode($body, true);
+        $body = trim($body);
+        if(strlen($body)>0) {
+            switch ($requestType) {
+                case 'json':
+                    $body = \json_decode($body, true);
+                    break;
+                case 'xml':
+                    $body = Xml::decode($body);
+                    break;
+            }
         }
 
         if ($this->debug) {
